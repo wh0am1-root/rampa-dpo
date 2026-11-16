@@ -224,10 +224,10 @@ function thresholdRangeStr(i) {
 }
 
 function timelineSvg(scores) {
-  const n = scores.length;
-  const xs = scores.map((_, i) => Math.round(W * (2 * i + 1) / (2 * n)));
   const W = 1000, H = 90;
   const TOP = 8, BOT = 62;
+  const n = scores.length;
+  const xs = scores.map((_, i) => Math.round(W * (2 * i + 1) / (2 * n)));
 
   const known = scores.filter(s => s !== null);
   let sMin, sMax;
@@ -285,7 +285,7 @@ function hasAnyData() {
 
 function renderVis() {
   const scores = state.milestones.map(m => parseScore(m.score));
-  const target = scores[3];
+  const target = scores[scores.length - 1];
   const targetStatus = getStatus(target);
 
   if (!hasAnyData()) {
@@ -298,7 +298,7 @@ function renderVis() {
   }
 
   const targetDisplay = target !== null
-    ? `<span style="color:${targetStatus.color}">${state.milestones[3].score}${state.unit ? ' ' + state.unit : ''}</span>`
+    ? `<span style="color:${targetStatus.color}">${state.milestones[state.milestones.length - 1].score}${state.unit ? ' ' + state.unit : ''}</span>`
     : `<span style="color:#484f58">?</span>`;
 
   const currentScore = state.milestones[0].score;
