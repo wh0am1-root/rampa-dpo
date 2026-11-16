@@ -126,30 +126,9 @@
     .card-delta { font-size: 0.68rem; font-weight: bold; margin-top: 0.4rem; }
 
     /* TIMELINE */
-    .timeline { position: relative; padding: 0.5rem 0; margin-top: 0.25rem; }
-    .tl-track {
-      position: absolute; top: calc(0.5rem + 5px);
-      left: calc(12.5%); right: calc(12.5% + 1px);
-      height: 1px; background: #484f58;
-    }
-    .tl-track::after {
-      content: ''; position: absolute; right: -6px; top: -4px;
-      border-left: 7px solid #484f58;
-      border-top: 4px solid transparent; border-bottom: 4px solid transparent;
-    }
-    .tl-dashed {
-      position: absolute; top: calc(0.5rem + 4.5px);
-      right: 0; width: calc(12.5% - 1px); height: 2px;
-      background: repeating-linear-gradient(
-        90deg, #30363d 0, #30363d 4px, transparent 4px, transparent 9px
-      );
-    }
-    .tl-cols { display: grid; grid-template-columns: repeat(4, 1fr); position: relative; }
-    .tl-col { display: flex; flex-direction: column; align-items: center; gap: 0.4rem; }
-    .tl-dot {
-      width: 10px; height: 10px; border-radius: 50%;
-      background: #0d1117; border: 2px solid #8b949e; position: relative; z-index: 1;
-    }
+    .timeline { margin-top: 0.5rem; }
+    .tl-cols { display: grid; grid-template-columns: repeat(4, 1fr); }
+    .tl-col { display: flex; flex-direction: column; align-items: center; gap: 0.3rem; padding-top: 0.4rem; }
     .tl-p { font-size: 0.62rem; text-transform: uppercase; color: #8b949e; letter-spacing: 0.05em; font-weight: bold; }
     .tl-ps { font-size: 0.57rem; color: #484f58; text-align: center; line-height: 1.4; }
 
@@ -245,6 +224,61 @@ function thresholdRangeStr(i) {
   return `${ts[i].min} – ${upper}`;
 }
 
+function timelineSvg(scores) {
+  const xs = [125, 375, 625, 875];
+  const W = 1000, H = 90;
+  const TOP = 8, BOT = 62;
+
+  const known = scores.filter(s => s !== null);
+  let sMin, sMax;
+  if (known.length === 0) {
+    sMin = 0; sMax = 100;
+  } else if (known.length === 1) {
+    sMin = known[0] - 8; sMax = known[0] + 8;
+  } else {
+    const spread = Math.max(...known) - Math.min(...known);
+    const pad = Math.max(spread * 0.35, 4);
+    sMin = Math.min(...known) - pad;
+    sMax = Math.max(...known) + pad;
+  }
+
+  function toY(s) {
+    return BOT - ((s - sMin) / (sMax - sMin)) * (BOT - TOP);
+  }
+
+  let lines = '', dots = '';
+  let lastX = xs[0], lastY = (TOP + BOT) / 2, lastKnown = false;
+
+  for (let i = 0; i < 4; i++) {
+    const s = scores[i];
+    const x = xs[i];
+    if (s !== null) {
+      const y = toY(s);
+      const color = getStatus(s).color;
+      if (i > 0) {
+        lines += `<line x1="${lastX}" y1="${lastY}" x2="${x}" y2="${y}"
+          stroke="#484f58" stroke-width="1.5" stroke-linecap="round"/>`;
+      }
+      dots += `<circle cx="${x}" cy="${y}" r="5.5" fill="#0d1117" stroke="${color}" stroke-width="2.5"/>`;
+      lastX = x; lastY = y; lastKnown = true;
+    } else {
+      const y = lastKnown ? lastY : (TOP + BOT) / 2;
+      lines += `<line x1="${lastX}" y1="${lastY}" x2="${x}" y2="${y}"
+        stroke="#30363d" stroke-width="1.5" stroke-dasharray="6 4" stroke-linecap="round"/>`;
+      dots += `<circle cx="${x}" cy="${y}" r="5" fill="#0d1117" stroke="#30363d" stroke-width="1.8"/>`;
+      lastX = x; lastY = y;
+    }
+  }
+
+  // dashed arrow after last dot
+  lines += `<line x1="${lastX}" y1="${lastY}" x2="${W - 18}" y2="${lastY}"
+    stroke="#30363d" stroke-width="1.5" stroke-dasharray="6 4"/>`;
+  lines += `<polygon points="${W-18},${lastY-4} ${W},${lastY} ${W-18},${lastY+4}" fill="#30363d"/>`;
+
+  return `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg"
+    style="width:100%;display:block;overflow:visible">${lines}${dots}</svg>`;
+}
+
 function hasAnyData() {
   return state.milestones.some(m => m.score.trim() !== '') || state.pillar.trim() !== '';
 }
@@ -315,7 +349,6 @@ function renderVis() {
 
   const tlCols = state.milestones.map(m => `
     <div class="tl-col">
-      <div class="tl-dot"></div>
       <div class="tl-p">${m.period || '—'}</div>
       <div class="tl-ps">${m.periodSub || ''}</div>
     </div>`).join('');
@@ -329,8 +362,7 @@ function renderVis() {
     <div class="legend">${legend}</div>
     <div class="cards">${cards}</div>
     <div class="timeline">
-      <div class="tl-track"></div>
-      <div class="tl-dashed"></div>
+      ${timelineSvg(scores)}
       <div class="tl-cols">${tlCols}</div>
     </div>`;
 }
