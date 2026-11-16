@@ -264,7 +264,7 @@ function renderVis() {
   }
 
   const targetDisplay = target !== null
-    ? `<span style="color:${targetStatus.color}">${state.milestones[3].score}${state.unit}</span>`
+    ? `<span style="color:${targetStatus.color}">${state.milestones[3].score}${state.unit ? ' ' + state.unit : ''}</span>`
     : `<span style="color:#484f58">?</span>`;
 
   const currentScore = state.milestones[0].score;
@@ -274,9 +274,9 @@ function renderVis() {
     .join(', ');
 
   const subtitle = currentScore && subtitleMiddle
-    ? `Partindo dos <strong>${currentScore}${state.unit} pontos</strong> de hoje, o ganho vem de: ${subtitleMiddle}.`
+    ? `Partindo dos <strong>${currentScore}${state.unit ? ' ' + state.unit : ''} pontos</strong> de hoje, o ganho vem de: ${subtitleMiddle}.`
     : currentScore
-    ? `Pontuação atual: <strong>${currentScore}${state.unit}</strong>.`
+    ? `Pontuação atual: <strong>${currentScore}${state.unit ? ' ' + state.unit : ''}</strong>.`
     : `Configure as pontuações acima para ver o resumo.`;
 
   const ts = sortedThresholds();
@@ -297,7 +297,7 @@ function renderVis() {
       ? `↑ ${delta >= 0 ? '+' : ''}${delta.toFixed(1).replace('.', ',')} p.p.`
       : null;
     const deltaColor = delta !== null ? (delta >= 0 ? '#f59e0b' : '#ef4444') : '';
-    const scoreDisplay = score !== null ? `${m.score}${state.unit}` : '—';
+    const scoreDisplay = score !== null ? `${m.score}${state.unit ? ' ' + state.unit : ''}` : '—';
     const scoreColor = score !== null ? '#e6edf3' : '#484f58';
 
     return `<div class="card">
